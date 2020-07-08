@@ -107,6 +107,53 @@ command_line(GtkApplication *app,
              GApplicationCommandLine *cmdline,
              gpointer user_data)
 {
+  GtkWidget *window;
+  GtkWidget *box;
+  GtkWidget *scale;
+  GtkWidget *embed;
+  ClutterActor *stage;
+  ClutterEffect *effect;
+
+  gint initial_strength = 7;
+
+  box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 14, 1);
+  gtk_range_set_value(GTK_RANGE(scale), initial_strength);
+
+  window = gtk_application_window_new(app);
+  gtk_window_set_title(GTK_WINDOW(window), "Dual Kawase Blur Demo");
+
+  ClutterContent *image = clutter_image_new();
+
+  GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file("baboon.tiff", NULL);
+
+  clutter_image_set_data(CLUTTER_IMAGE(image),
+                         gdk_pixbuf_get_pixels(pixbuf),
+                         gdk_pixbuf_get_has_alpha(pixbuf)
+                             ? COGL_PIXEL_FORMAT_RGBA_8888
+                             : COGL_PIXEL_FORMAT_RGB_888,
+                         gdk_pixbuf_get_width(pixbuf),
+                         gdk_pixbuf_get_height(pixbuf),
+                         gdk_pixbuf_get_rowstride(pixbuf),
+                         NULL);
+
+  gtk_window_set_default_size(GTK_WINDOW(window), gdk_pixbuf_get_width(pixbuf), gdk_pixbuf_get_height(pixbuf));
+
+  g_object_unref(pixbuf);
+
+  embed = gtk_clutter_embed_new();
+  stage = gtk_clutter_embed_get_stage(GTK_CLUTTER_EMBED(embed));
+  clutter_actor_set_content(stage, image);
+  effect = clutter_kawase_blur_effect_new();
+  clutter_kawase_blur_effect_update_blur_strength(CLUTTER_KAWASE_BLUR_EFFECT(effect), initial_strength);
+  clutter_actor_add_effect_with_name(stage, "blur", effect);
+
+  g_signal_connect(scale,
+                   "value-changed",
+                   G_CALLBACK(scale_moved),
+                   effect);
+
+
 }
 
 int main(int argc,
